@@ -52,19 +52,15 @@ public class Trie<W extends List<V>, V> implements Set<W> { //NOTE: The idea is 
      *                              (<a href="Collection.html#optional-restrictions">optional</a>)
      */
     @Override
-    public boolean contains(Object o) {
-        if (o instanceof W) {
-            W wo = (W) o;
-            Node<V> current = start;
-            int i = 0;
-            while (i < wo.size() && current.hasNext(wo.get(i))) {
-                current = current.next(wo.get(i));
-                i++;
-            }
-            return i == wo.size() && current.isFinal();
+    public boolean contains(Object o) throws ClassCastException, NullPointerException {
+        W wo = (W) o;
+        Node<V> current = start;
+        int i = 0;
+        while (i < wo.size() && current.hasNext(wo.get(i))) {
+            current = current.next(wo.get(i));
+            i++;
         }
-
-        return false;
+        return i == wo.size() && current.isFinal();
     }
 
     /**
@@ -76,7 +72,7 @@ public class Trie<W extends List<V>, V> implements Set<W> { //NOTE: The idea is 
      */
     @Override
     public Iterator<W> iterator() {
-        return new TrieItr();
+        return (Iterator<W>) start.toList(null).iterator();
     }
 
     /**
@@ -149,12 +145,12 @@ public class Trie<W extends List<V>, V> implements Set<W> { //NOTE: The idea is 
             for (int i = 0; i < array.length; i++) {
                 a[i] = (T) array[i];
             }
-        } catch (ArrayIndexOutOfBoundsException aioobe) {
+        } catch (ArrayIndexOutOfBoundsException aie) {
             return (T[]) array;
         } catch (ClassCastException cce) {
             throw new ArrayStoreException();
         }
-        return null;
+        return a;
     }
 
     /**
@@ -190,8 +186,8 @@ public class Trie<W extends List<V>, V> implements Set<W> { //NOTE: The idea is 
     @Override
     public boolean add(W vs) throws NullPointerException {
         Node<V> current = start;
-        for (int i = 0; i < vs.size(); i++) {
-            current = current.add(vs.get(i));
+        for (V v : vs) {
+            current = current.add(v);
         }
         if (current.isFinal()) {
             return false;
@@ -224,22 +220,19 @@ public class Trie<W extends List<V>, V> implements Set<W> { //NOTE: The idea is 
      *                                       is not supported by this set
      */
     @Override
-    public boolean remove(Object o) {
-        if (o instanceof W) {
-            W wo = (W) o;
-            Node<V> current = start;
-            int i = 0;
-            while (i < wo.size() && current.hasNext(wo.get(i))) {
-                current = current.next(wo.get(i));
-                i++;
-            }
-
-            if (i == wo.size() && current.isFinal()) {
-                current.setFinal(false);
-                return true;
-            }
+    public boolean remove(Object o) throws ClassCastException, NullPointerException {
+        W wo = (W) o;
+        Node<V> current = start;
+        int i = 0;
+        while (i < wo.size() && current.hasNext(wo.get(i))) {
+            current = current.next(wo.get(i));
+            i++;
         }
 
+        if (i == wo.size() && current.isFinal()) {
+            current.setFinal(false);
+            return true;
+        }
         return false;
     }
 
@@ -296,8 +289,7 @@ public class Trie<W extends List<V>, V> implements Set<W> { //NOTE: The idea is 
     @Override
     public boolean addAll(Collection<? extends W> c) {
         boolean changed = false;
-        for (Iterator<? extends W> iterator = c.iterator(); iterator.hasNext(); ) {
-            W next = iterator.next();
+        for (W next : c) {
             if (add(next)) {
                 changed = true;
             }
@@ -355,8 +347,8 @@ public class Trie<W extends List<V>, V> implements Set<W> { //NOTE: The idea is 
     @Override
     public boolean removeAll(Collection<?> c) {
         boolean changed = false;
-        for (Iterator<?> iterator = c.iterator(); iterator.hasNext(); ) {
-            if (remove(iterator.next())) {
+        for (Object next : c) {
+            if (remove(next)) {
                 changed = true;
             }
         }
@@ -421,17 +413,17 @@ public class Trie<W extends List<V>, V> implements Set<W> { //NOTE: The idea is 
     public int hashCode() {
         Object[] array = toArray();
         int hashCode = 0;
-        for (int i = 0; i < array.length; i++) {
-            hashCode += array[i].hashCode();
+        for (Object anArray : array) {
+            hashCode += anArray.hashCode();
         }
         return hashCode;
     }
 
     private class Node<E> {
 
+        private final V value;
+        private final List<Node<V>> nextList;
         private boolean isFinal;
-        private V value;
-        private List<Node<V>> nextList;
 
         public Node() {
             this(null);
@@ -512,60 +504,6 @@ public class Trie<W extends List<V>, V> implements Set<W> { //NOTE: The idea is 
                 }
                 return auxList;
             }
-        }
-    }
-
-    private class TrieItr<E> implements Iterator<E> {
-
-        List<W> wholeList; //TODO: toArray()
-
-        public TrieItr() {
-            List<Node<V>> auxList = new LinkedList<Node<V>>();
-            auxList.add(start);
-
-        }
-
-        /**
-         * Returns {@code true} if the iteration has more elements.
-         * (In other words, returns {@code true} if {@link #next} would
-         * return an element rather than throwing an exception.)
-         *
-         * @return {@code true} if the iteration has more elements
-         */
-        @Override
-        public boolean hasNext() {
-            return false;
-        }
-
-        /**
-         * Returns the next element in the iteration.
-         *
-         * @return the next element in the iteration
-         * @throws NoSuchElementException if the iteration has no more elements
-         */
-        @Override
-        public Object next() {
-            return null;
-        }
-
-        /**
-         * Removes from the underlying collection the last element returned
-         * by this iterator (optional operation).  This method can be called
-         * only once per call to {@link #next}.  The behavior of an iterator
-         * is unspecified if the underlying collection is modified while the
-         * iteration is in progress in any way other than by calling this
-         * method.
-         *
-         * @throws UnsupportedOperationException if the {@code remove}
-         *                                       operation is not supported by this iterator
-         * @throws IllegalStateException         if the {@code next} method has not
-         *                                       yet been called, or the {@code remove} method has already
-         *                                       been called after the last call to the {@code next}
-         *                                       method
-         */
-        @Override
-        public void remove() {
-
         }
     }
 }
