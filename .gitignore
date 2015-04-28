@@ -1,5 +1,4 @@
 ## Java
-
 *.class
 *.war
 *.ear
@@ -18,7 +17,6 @@ out/
 com_crashlytics_export_strings.xml
 
 ## Gradle
-
 .gradle
 gradle-app.setting
 #build/
